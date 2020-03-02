@@ -50,6 +50,7 @@ class Final (object):
           match.dl_type = dl_type
           match.tp_src = None
           match.tp_dst = None
+          match.nw_tos = None
           msg.match = match    
           msg.data = packet_in
           msg.idle_timeout = 30
@@ -66,7 +67,8 @@ class Final (object):
           match.ip__proto = proto
           match.dl_type = dl_type
           match.nw_src = ipsrc
-          match.nw_dst = ipdst  	  
+          match.nw_dst = ipdst
+          match.nw_tos = None  	  
           msg.match = match
           msg.idle_timeout = 10
           msg.hard_timeout = 100
@@ -116,18 +118,11 @@ class Final (object):
               print "srcip is ",get_IPv4.srcip
               if get_ICMP:
                     print "icmp"
-                    drop(self, 1,packet.IP_TYPE,None,None)
-                  #  drop(self, 1, '128.114.50.10','10.0.2.102')
-                  #  drop(self, 1,'128.114.50.10', '10.0.3.103')
-                 #if get_IPv4.protoco ==1:
-                    #if get_ICMP.type in 8:
-                    #drop(self, 6, None ,None)
-                # else:
-                   # protocolflow(self,of.OFPP_ALL)
+                    drop(self, 1,packet.IP_TYPE,"128.114.50.0/24",None)
               elif get_IPv4.srcip == '128.114.50.10' and get_IPv4.dstip == '10.0.4.104':
-                 dropANY(self,'128.114.50.10','10.0.4.104')
+                 dropANY(self,"128.114.50.0/24","10.0.4.0/24")
               elif get_IPv4.srcip == '10.0.4.104' and get_IPv4.dstip == '128.114.50.10':
-                 dropANY(self,'10.0.4.104','128.114.50.10')
+                 dropANY(self,"10.0.4.0/24","128.114.50.0/24")
               else:
                  protocolflow(self, of.OFPP_ALL,None,None)
              
