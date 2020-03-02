@@ -43,32 +43,42 @@ class Final (object):
     #   - switch_id represents the id of the switch that received the packet
     #      (for example, s1 would have switch_id == 1, s2 would have switch_id == 2, etc...)
       #print "Hello, World!"
-      def protocolflow(self, out_port):
-          msg = of.ofp_flow_mod()
-          msg.match = of.ofp_match.from_packet(packet)    
+      def protocolflow(self, out_port, proto, dl_type):
+          msg = of.ofp_flow_mod() 
+          match = of.ofp_match.from_packet(packet)
+          match.nw_proto = proto
+          match.dl_type = dl_type
+          match.tp_src = None
+          match.tp_dst = None
+          msg.match = match    
           msg.data = packet_in
           msg.idle_timeout = 30
-          msg.hard_timeout = 30
+          msg.hard_timeout = 50
           action = of.ofp_action_output(port = out_port)
           msg.actions.append(action)
           self.connection.send(msg)
 
-
-      def drop(self, op, ipsrc):
+      def drop(self, proto,dl_type, ipsrc, ipdst):  
+      #def drop(self, op, ipsrc, ipdst):
           msg = of.ofp_flow_mod()
-          match = of.ofp_match()
-          match.icmp_type = op
+          match = of.ofp_match.from_packet(packet)
+         # match.icmp_type = op
+          match.ip__proto = proto
+          match.dl_type = dl_type
           match.nw_src = ipsrc
-            	  
+          match.nw_dst = ipdst  	  
           msg.match = match
           msg.idle_timeout = 10
           msg.hard_timeout = 100
           self.connection.send(msg)
       
                      
-      def dropANY(duration =None):
+      def dropANY(self, ipsrc, ipdst):
           msg = of.ofp_flow_mod()
-          match = of.ofp_match()
+          match = of.ofp_match.from_packet(packet)
+          match.nw_src = ipsrc
+	  match.nw_dst = ipdst
+          match.nw_tos = None
           msg.match = match
           msg.idle_timeout = 30
           msg.hard_timeout = 100
@@ -79,51 +89,51 @@ class Final (object):
       get_IPv4 = packet.find('ipv4')
  
       if get_ARP:
-         protocolflow(self, of.OFPP_ALL)
+         protocolflow(self, of.OFPP_ALL,None, packet.ARP_TYPE)
       elif get_IPv4:
          if switch_id == 1:
-            if port_on_switch == 1: 
-               protocolflow(self, 2)
-            elif port_on_switch ==2:
-               protocolflow(self,1)   
+              if port_on_switch == 1: 
+                 protocolflow(self, 2,None,packet.IP_TYPE)
+              elif port_on_switch ==2:
+                 protocolflow(self,1,None,packet.IP_TYPE)   
          elif switch_id==2: 
               if port_on_switch == 1:
-                 protocolflow(self, 2)
+                 protocolflow(self, 2,None,packet.IP_TYPE)
               elif port_on_switch == 2:
-                 protocolflow(self, 1)
+                 protocolflow(self, 1,None,packet.IP_TYPE)
          elif switch_id==3:
-            if port_on_switch == 1:
-               protocolflow(self, 2)
-            elif port_on_switch == 2:
-               protocolflow(self, 1)
+              if port_on_switch == 1:
+                 protocolflow(self, 2,None,packet.IP_TYPE)
+              elif port_on_switch == 2:
+                 protocolflow(self, 1,None,packet.IP_TYPE)
          elif switch_id==4:
-           if port_on_switch == 1: 
-              protocolflow(self, 2)
-           elif port_on_switch == 2:
-              protocolflow(self, 1)
-         elif switch_id==5:
-            if port_on_switch == 5 and get_IPv4.srcip=='128.114.50.10':
+              if port_on_switch == 1: 
+                 protocolflow(self, 2,None,packet.IP_TYPE)
+              elif port_on_switch == 2:
+                 protocolflow(self, 1,None,packet.IP_TYPE)
+         elif switch_id==5:             
+            if port_on_switch ==5:
+              print "srcip is ",get_IPv4.srcip
               if get_ICMP:
-                 if get_ICMP.type ==8:
-                    drop(self, 8, None)
-                 else:
-                    protocolflow(self,of.OFPP_ALL)
+                    print "icmp"
+                    drop(self, 1,packet.IP_TYPE,None,None)
+                  #  drop(self, 1, '128.114.50.10','10.0.2.102')
+                  #  drop(self, 1,'128.114.50.10', '10.0.3.103')
+                 #if get_IPv4.protoco ==1:
+                    #if get_ICMP.type in 8:
+                    #drop(self, 6, None ,None)
+                # else:
+                   # protocolflow(self,of.OFPP_ALL)
               elif get_IPv4.srcip == '128.114.50.10' and get_IPv4.dstip == '10.0.4.104':
-                 dropANY()
+                 dropANY(self,'128.114.50.10','10.0.4.104')
               elif get_IPv4.srcip == '10.0.4.104' and get_IPv4.dstip == '128.114.50.10':
-                 dropANY()
+                 dropANY(self,'10.0.4.104','128.114.50.10')
               else:
-                 protocolflow(self, of.OFPP_ALL)
+                 protocolflow(self, of.OFPP_ALL,None,None)
              
             else:
-              protocolflow(self, of.OFPP_ALL)
-           #protocolflow(self,port_on_switch)
-          # protocolflow(self,2)
-          # protocolflow(self,3)
-          # protocolflow(self,4)
-          # protocolflow(self,5)   
-        # else:
-          # drop()
+              protocolflow(self, of.OFPP_ALL,None,None)
+           
 
   def _handle_PacketIn (self, event):
     """
