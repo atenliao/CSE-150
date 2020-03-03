@@ -91,7 +91,7 @@ class Final (object):
       get_IPv4 = packet.find('ipv4')
  
       if get_ARP:
-         protocolflow(self, of.OFPP_ALL,None, packet.ARP_TYPE)
+         protocolflow(self, of.OFPP_FLOOD,None, packet.ARP_TYPE)
       elif get_IPv4:
          if switch_id == 1:
               if port_on_switch == 1: 
