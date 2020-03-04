@@ -48,6 +48,8 @@ class Final (object):
           match = of.ofp_match.from_packet(packet)
           match.nw_proto = proto
           match.dl_type = dl_type
+          match.nw_src = None
+          match.nw_dst = None
           match.tp_src = None
           match.tp_dst = None
           match.nw_tos = None
@@ -59,15 +61,13 @@ class Final (object):
           msg.actions.append(action)
           self.connection.send(msg)
 
-      def drop(self, proto,dl_type, ipsrc, ipdst):  
+      def drop(self, proto,dl_type):  
       #def drop(self, op, ipsrc, ipdst):
           msg = of.ofp_flow_mod()
           match = of.ofp_match.from_packet(packet)
          # match.icmp_type = op
           match.ip__proto = proto
-          match.dl_type = dl_type
-          match.nw_src = ipsrc
-          match.nw_dst = ipdst
+          match.dl_type = dl_type        
           match.nw_tos = None  	  
           msg.match = match
           msg.idle_timeout = 10
@@ -75,11 +75,9 @@ class Final (object):
           self.connection.send(msg)
       
                      
-      def dropANY(self, ipsrc, ipdst):
+      def dropANY(duration = None):
           msg = of.ofp_flow_mod()
           match = of.ofp_match.from_packet(packet)
-          match.nw_src = ipsrc
-	  match.nw_dst = ipdst
           match.nw_tos = None
           msg.match = match
           msg.idle_timeout = 30
@@ -117,18 +115,21 @@ class Final (object):
             if port_on_switch ==5:
               print "srcip is ",get_IPv4.srcip
               if get_ICMP:
-                    print "icmp"
-                    drop(self, 1,packet.IP_TYPE,"128.114.50.0/24",None)
+                    print "drop icmp"
+                    drop(self, 1,packet.IP_TYPE)
+                    print "test 1"
               elif get_IPv4.srcip == '128.114.50.10' and get_IPv4.dstip == '10.0.4.104':
-                 dropANY(self,"128.114.50.0/24","10.0.4.0/24")
+                 dropANY()
+                 print "test 2"
               elif get_IPv4.srcip == '10.0.4.104' and get_IPv4.dstip == '128.114.50.10':
-                 dropANY(self,"10.0.4.0/24","128.114.50.0/24")
+                 dropANY()
+                 print "test 3"
               else:
-                 protocolflow(self, of.OFPP_ALL,None,None)
-             
+                 protocolflow(self,of.OFPP_ALL,None,None)
+                 print "test 4"
             else:
               protocolflow(self, of.OFPP_ALL,None,None)
-           
+              print "test 5"
 
   def _handle_PacketIn (self, event):
     """
